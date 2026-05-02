@@ -1,0 +1,95 @@
+# Build the image for both target platforms (linux/arm/v7 and linux/arm64),
+# convert each to a docker-archive .tar that RouterOS /container can ingest,
+# and attach them to a GitHub Release tied to the pushed tag.
+#
+# Triggers:
+#   - push of a v* tag      → automatic release named after the tag
+#   - workflow_dispatch     → manual run; pick which existing tag to release
+#
+# Outputs (per release):
+#   tailscale-router-arm-v7.tar   ~16 MB   for ARMv7 routers (RB3011, RB4011,
+#                                          hAP series, RB960PGS, etc.)
+#   tailscale-router-arm64.tar    ~16 MB   for ARM64 routers (RB5009, L009,
+#                                          CHR on arm64 hosts)
+#   SHA256SUMS                             one-line-per-asset checksum file
+#
+# This workflow only runs on tag pushes and manual dispatch — fork PRs do
+# NOT trigger it. Combined with branch protection on main, only an admin
+# (you) can ship a release.
+
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v1.96.5). Must already exist."
+        required: true
+
+permissions:
+  # The release step needs to create the release and upload assets.
+  contents: write
+
+jobs:
+  release:
+    name: build & release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: release-${{ github.event.inputs.tag || github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      # The Dockerfile uses --platform=$BUILDPLATFORM for the Go build stage
+      # so the heavy compile happens natively on the x86 runner; QEMU is only
+      # needed for the small Alpine runtime stage (file copies + apk add).
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/arm/v7,linux/arm64
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends skopeo
+
+      - name: Build linux/arm/v7 → tailscale-router-arm-v7.tar
+        env:
+          PLATFORM: linux/arm/v7
+          IMAGE_NAME: tailscale-router-mikrotik
+          TAR_OUT: tailscale-router-arm-v7.tar
+        run: ./build.sh
+
+      - name: Build linux/arm64 → tailscale-router-arm64.tar
+        env:
+          PLATFORM: linux/arm64
+          IMAGE_NAME: tailscale-router-mikrotik
+          TAR_OUT: tailscale-router-arm64.tar
+        run: ./build.sh
+
+      - name: Compute SHA256 checksums
+        run: |
+          sha256sum tailscale-router-arm-v7.tar tailscale-router-arm64.tar \
+            | tee SHA256SUMS
+
+      - name: Create / update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: ${{ github.event.inputs.tag || github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            tailscale-router-arm-v7.tar
+            tailscale-router-arm64.tar
+            SHA256SUMS

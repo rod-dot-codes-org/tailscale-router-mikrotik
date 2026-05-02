@@ -68,22 +68,30 @@ The actual boot sequence (kernel-TUN happy path):
 └── README.md
 ```
 
-## Pre-built image
+## Pre-built tar archives
 
-Multi-arch (`linux/arm/v7` + `linux/arm64`) images are published to
-Docker Hub on every push to `main` and on each `v*` tag, via
-[`.github/workflows/build.yml`](.github/workflows/build.yml). Pull
-directly with:
+Each `v*` tag triggers
+[`.github/workflows/release.yml`](.github/workflows/release.yml),
+which builds both platforms and attaches the resulting docker-archive
+`.tar` files to a GitHub Release. Skip the local build entirely and
+download directly:
+
+| Asset | Target hardware |
+|---|---|
+| `tailscale-router-arm-v7.tar` | RB3011, RB4011, hAP / hAP ax series, RB960PGS, anything ARMv7 |
+| `tailscale-router-arm64.tar`  | RB5009, L009, CHR on arm64 hosts, anything ARM64 |
+| `SHA256SUMS`                  | one-line-per-asset checksums |
 
 ```bash
-docker pull <dockerhub-namespace>/tailscale-router-mikrotik:latest
-# or pin to a release:
-docker pull <dockerhub-namespace>/tailscale-router-mikrotik:1.96.5
+# Pick the tar that matches your router and grab the latest release:
+curl -LO https://github.com/rod-dot-codes-org/tailscale-router-mikrotik/releases/latest/download/tailscale-router-arm-v7.tar
+
+# Then scp + /import as documented in "On-router deployment" below.
+scp -p tailscale-router-arm-v7.tar <user>@<router>:/usb1/container-images/tailscale-router.tar
 ```
 
-For the on-router deploy, `skopeo copy docker://...` to a
-`docker-archive:tailscale-router.tar` then scp to the router (same
-flow as `build.sh` produces locally).
+To pin a specific version, replace `latest` with the tag name (e.g.
+`download/v1.96.5/tailscale-router-arm-v7.tar`).
 
 ## Building locally
 
