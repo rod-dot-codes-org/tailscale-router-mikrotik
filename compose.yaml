@@ -1,0 +1,41 @@
+# Local arm/v7 test harness for the tailscale-router container.
+# Forces linux/arm/v7 to match the RB3011 (runs under QEMU on Apple Silicon).
+#
+# Bring up:
+#   AUTH_KEY=tskey-auth-... docker compose up
+#
+# Verify (separate shell):
+#   # Joined the tailnet?
+#   docker compose exec tailscale-router \
+#     /usr/local/bin/tailscale --socket=/var/run/tailscale/tailscaled.sock status
+#
+#   # Webclient persisted?
+#   docker compose exec tailscale-router \
+#     /usr/local/bin/tailscale --socket=/var/run/tailscale/tailscaled.sock debug prefs | grep -i web
+#
+# Teardown:
+#   docker compose down
+
+services:
+  tailscale-router:
+    build:
+      context: .
+      platforms:
+        - linux/arm/v7
+    image: mikrotik-tailscale-router:local
+    platform: linux/arm/v7
+    container_name: tailscale-router-test
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    environment:
+      TS_AUTH_ONCE: "true"
+      # Set via .env file or shell export — never commit a literal key.
+      TS_AUTHKEY: "${TS_AUTHKEY:?TS_AUTHKEY required (set in .env or export it)}"
+      TS_HOSTNAME: "mikrotik-test"
+      TS_TAGS: "tag:mikrotik"
+      # Local docker doesn't pass /dev/net/tun by default — fall back to
+      # netstack. On the router this defaults to kernel TUN.
+      TS_USERSPACE: "true"
+    volumes:
+      - ./_state:/var/lib/tailscale

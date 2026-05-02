@@ -1,0 +1,16 @@
+# Build output
+tailscale-router.tar
+
+# Local docker-compose state (TS daemon state, derpmap cache, etc.)
+_state/
+
+# macOS
+.DS_Store
+
+# Editor swap/backup
+*.swp
+*.bak
+
+# Local env (auth keys, etc.) — never commit
+.env
+.env.local
