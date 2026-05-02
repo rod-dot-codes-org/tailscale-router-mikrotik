@@ -25,6 +25,27 @@ RouterOS containers** — kernel TUN, iptables-legacy, persistent webclient,
 trimmed via featuretags. Ships as a docker-archive `.tar` you load on
 the router via `/container/add file=...`.
 
+> [!IMPORTANT]
+> **RouterOS version matters.** RouterOS **7.22 broke container TUN
+> gateway routing** by changing rule priorities — this affects any
+> container using a TUN device (sing-box, mihomo, *and* tailscale subnet
+> routers). It's reverted in **7.23rc2** ("*route — revert to old routing
+> rule priorities for containers (introduced in v7.22)*").
+>
+> | RouterOS | Status |
+> |---|---|
+> | `7.23rc2+` (testing) | ✅ works — this is what the image is tested on |
+> | `7.22.x` (stable) | ❌ broken — container starts but tailnet→subnet routing misbehaves |
+> | `≤ 7.21` | ✅ works (before the regression) |
+>
+> If you're on 7.22 stable, switch to the testing channel:
+> ```
+> /system package update set channel=testing
+> /system package update install
+> ```
+> Reference thread:
+> [forum.mikrotik.com/t/269160](https://forum.mikrotik.com/t/fixed-routeros-7-22-container-tun-gateway-broken-sing-box-mihomo/269160/11).
+
 Originally built to replace
 [`fluent-networks/tailscale-mikrotik`](https://github.com/Fluent-networks/tailscale-mikrotik)
 on an RB3011 home gateway, but the patterns generalize to any RouterOS
