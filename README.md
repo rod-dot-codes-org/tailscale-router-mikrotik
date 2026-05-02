@@ -68,7 +68,24 @@ The actual boot sequence (kernel-TUN happy path):
 └── README.md
 ```
 
-## Building
+## Pre-built image
+
+Multi-arch (`linux/arm/v7` + `linux/arm64`) images are published to
+Docker Hub on every push to `main` and on each `v*` tag, via
+[`.github/workflows/build.yml`](.github/workflows/build.yml). Pull
+directly with:
+
+```bash
+docker pull <dockerhub-namespace>/tailscale-router-mikrotik:latest
+# or pin to a release:
+docker pull <dockerhub-namespace>/tailscale-router-mikrotik:1.96.5
+```
+
+For the on-router deploy, `skopeo copy docker://...` to a
+`docker-archive:tailscale-router.tar` then scp to the router (same
+flow as `build.sh` produces locally).
+
+## Building locally
 
 Requires Docker (with buildx) and either `skopeo` (recommended; produces
 a docker-archive that RouterOS can load directly) or the
