@@ -2,6 +2,24 @@
   <img src="tailscale-router.png" alt="tailscale-router-mikrotik" />
 </p>
 
+<p align="center">
+  <a href="https://github.com/rod-dot-codes-org/tailscale-router-mikrotik/releases/latest"><img src="https://img.shields.io/github/v/release/rod-dot-codes-org/tailscale-router-mikrotik?label=latest&style=flat-square" alt="Latest release"></a>
+  <a href="https://github.com/rod-dot-codes-org/tailscale-router-mikrotik/releases/latest"><img src="https://img.shields.io/github/release-date/rod-dot-codes-org/tailscale-router-mikrotik?style=flat-square" alt="Release date"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/rod-dot-codes-org/tailscale-router-mikrotik?style=flat-square" alt="License: MIT"></a>
+</p>
+
+### Downloads — latest release
+
+| Platform | Size | Direct link |
+|---|---|---|
+| `linux/arm/v7` (RB3011, RB4011, hAP / hAP ax, RB960PGS) | **16.65 MB** | [`tailscale-router-arm-v7.tar`](https://github.com/rod-dot-codes-org/tailscale-router-mikrotik/releases/latest/download/tailscale-router-arm-v7.tar) |
+| `linux/arm64` (RB5009, L009, CHR on arm64) | **29.91 MB** | [`tailscale-router-arm64.tar`](https://github.com/rod-dot-codes-org/tailscale-router-mikrotik/releases/latest/download/tailscale-router-arm64.tar) |
+| Checksums | 187 B | [`SHA256SUMS`](https://github.com/rod-dot-codes-org/tailscale-router-mikrotik/releases/latest/download/SHA256SUMS) |
+
+```bash
+curl -LO https://github.com/rod-dot-codes-org/tailscale-router-mikrotik/releases/latest/download/tailscale-router-arm-v7.tar
+```
+
 A minimal Tailscale subnet-router OCI image purpose-built for **MikroTik
 RouterOS containers** — kernel TUN, iptables-legacy, persistent webclient,
 trimmed via featuretags. Ships as a docker-archive `.tar` you load on
@@ -70,28 +88,12 @@ The actual boot sequence (kernel-TUN happy path):
 
 ## Pre-built tar archives
 
-Each `v*` tag triggers
-[`.github/workflows/release.yml`](.github/workflows/release.yml),
+Direct links + sizes are at the top of this README. Each `v*` tag
+triggers [`.github/workflows/release.yml`](.github/workflows/release.yml)
 which builds both platforms and attaches the resulting docker-archive
-`.tar` files to a GitHub Release. Skip the local build entirely and
-download directly:
-
-| Asset | Target hardware |
-|---|---|
-| `tailscale-router-arm-v7.tar` | RB3011, RB4011, hAP / hAP ax series, RB960PGS, anything ARMv7 |
-| `tailscale-router-arm64.tar`  | RB5009, L009, CHR on arm64 hosts, anything ARM64 |
-| `SHA256SUMS`                  | one-line-per-asset checksums |
-
-```bash
-# Pick the tar that matches your router and grab the latest release:
-curl -LO https://github.com/rod-dot-codes-org/tailscale-router-mikrotik/releases/latest/download/tailscale-router-arm-v7.tar
-
-# Then scp + /import as documented in "On-router deployment" below.
-scp -p tailscale-router-arm-v7.tar <user>@<router>:/usb1/container-images/tailscale-router.tar
-```
-
-To pin a specific version, replace `latest` with the tag name (e.g.
-`download/v1.96.5/tailscale-router-arm-v7.tar`).
+`.tar` files (plus a `SHA256SUMS`) to a GitHub Release. To pin a
+specific version, replace `latest` with the tag name (e.g.
+`releases/download/v1.96.5/tailscale-router-arm-v7.tar`).
 
 ## Building locally
 
