@@ -135,6 +135,11 @@ done
 # --stateful-filtering=false because this node is a subnet router and needs
 # to forward packets whose source isn't a known tailnet peer (e.g., LAN
 # clients pre-routed through the container, or the RouterOS host itself).
+# --report-posture=true so srcPosture grants in policy.hujson can match on
+# this node. Has to live IN the up call (not as a subsequent `tailscale set`)
+# because once it's been on, `tailscale up` without it errors out:
+# "changing settings via 'tailscale up' requires mentioning all non-default
+# flags."
 UP_ARGS=(
     --authkey="${TS_AUTHKEY}"
     --hostname="${TS_HOSTNAME}"
@@ -143,6 +148,7 @@ UP_ARGS=(
     --accept-dns=true
     --accept-routes=true
     --stateful-filtering=false
+    --report-posture=true
 )
 if [ "${TS_USERSPACE}" = "true" ]; then
     UP_ARGS+=( --netfilter-mode=off )
@@ -163,11 +169,6 @@ echo "[entrypoint] tailscale up OK"
 # Persistent webclient — idempotent, fine to re-run on every boot.
 echo "[entrypoint] enabling webclient (:5252)"
 /usr/local/bin/tailscale --socket="${TS_SOCKET}" set --webclient
-
-# Posture checking — reports OS / hostname / serial back to the control plane
-# so srcPosture grants in policy.hujson can match on this node. Idempotent.
-echo "[entrypoint] enabling posture reporting"
-/usr/local/bin/tailscale --socket="${TS_SOCKET}" set --report-posture
 
 echo "[entrypoint] supervising tailscaled (pid=${TAILSCALED_PID})"
 wait "${TAILSCALED_PID}"
