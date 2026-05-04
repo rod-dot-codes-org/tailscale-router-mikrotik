@@ -129,13 +129,20 @@ done
 # pass --netfilter-mode=on so tailscaled installs rules; this also makes the
 # up command idempotent across upgrades — `tailscale up` refuses to silently
 # change a pref away from a non-default value, so we always state our intent.
+#
+# --accept-dns=true so MagicDNS resolves *.ts.net inside the container (needed
+# for any tailnet-targeted helper that goes by hostname, not IP).
+# --stateful-filtering=false because this node is a subnet router and needs
+# to forward packets whose source isn't a known tailnet peer (e.g., LAN
+# clients pre-routed through the container, or the RouterOS host itself).
 UP_ARGS=(
     --authkey="${TS_AUTHKEY}"
     --hostname="${TS_HOSTNAME}"
     --login-server="${TS_LOGIN_SERVER}"
     --advertise-tags="${TS_TAGS}"
-    --accept-dns=false
+    --accept-dns=true
     --accept-routes=true
+    --stateful-filtering=false
 )
 if [ "${TS_USERSPACE}" = "true" ]; then
     UP_ARGS+=( --netfilter-mode=off )
@@ -156,6 +163,11 @@ echo "[entrypoint] tailscale up OK"
 # Persistent webclient — idempotent, fine to re-run on every boot.
 echo "[entrypoint] enabling webclient (:5252)"
 /usr/local/bin/tailscale --socket="${TS_SOCKET}" set --webclient
+
+# Posture checking — reports OS / hostname / serial back to the control plane
+# so srcPosture grants in policy.hujson can match on this node. Idempotent.
+echo "[entrypoint] enabling posture reporting"
+/usr/local/bin/tailscale --socket="${TS_SOCKET}" set --report-posture
 
 echo "[entrypoint] supervising tailscaled (pid=${TAILSCALED_PID})"
 wait "${TAILSCALED_PID}"
